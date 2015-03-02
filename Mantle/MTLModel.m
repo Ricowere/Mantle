@@ -23,8 +23,6 @@
 // Used to cache the reflection performed in +propertyKeys.
 static void *MTLModelCachedPropertyKeysKey = &MTLModelCachedPropertyKeysKey;
 
-static NSString *MTLModelDefaultUniqueIdentifier = @"0";
-
 // Validates a value for an object and sets it if necessary.
 //
 // obj         - The object for which the value is being validated. This value
@@ -69,13 +67,6 @@ static BOOL MTLValidateAndSetValue(id obj, NSString *key, id value, BOOL forceUp
 	}
 }
 
-NS_INLINE NSString * MTLGetObjectUniqueIdentifier (MTLModel *objMTLmodel) {
-	if ([objMTLmodel shouldBeIdentifiedUniquing])
-		return [NSString stringWithFormat:@"%@-%f", NSStringFromClass(objMTLmodel.class), CACurrentMediaTime()];
-	else
-		return MTLModelDefaultUniqueIdentifier;
-}
-
 @interface MTLModel ()
 
 // Enumerates all properties of the receiver's class hierarchy, starting at the
@@ -84,8 +75,6 @@ NS_INLINE NSString * MTLGetObjectUniqueIdentifier (MTLModel *objMTLmodel) {
 // The given block will be invoked multiple times for any properties declared on
 // multiple classes in the hierarchy.
 + (void)enumeratePropertiesUsingBlock:(void (^)(objc_property_t property, BOOL *stop))block;
-
-@property (nonatomic, copy, readonly) NSString *mtlUniqueIdentifier; 
 
 @end
 
@@ -117,8 +106,6 @@ NS_INLINE NSString * MTLGetObjectUniqueIdentifier (MTLModel *objMTLmodel) {
 		BOOL success = MTLValidateAndSetValue(self, key, value, YES, error);
 		if (!success) return nil;
 	}
-	
-	_mtlUniqueIdentifier = [MTLGetObjectUniqueIdentifier(self) copy];
 
 	return self;
 }
@@ -223,10 +210,7 @@ NS_INLINE NSString * MTLGetObjectUniqueIdentifier (MTLModel *objMTLmodel) {
 #pragma mark NSCopying
 
 - (instancetype)copyWithZone:(NSZone *)zone {
-	MTLModel *copiedModel = [[self.class allocWithZone:zone] initWithDictionary:self.dictionaryValue error:NULL];
-	copiedModel->_mtlUniqueIdentifier = self.mtlUniqueIdentifier;
-	
-	return copiedModel;
+	return [[self.class allocWithZone:zone] initWithDictionary:self.dictionaryValue error:NULL];;
 }
 
 #pragma mark NSObject
@@ -253,9 +237,6 @@ NS_INLINE NSString * MTLGetObjectUniqueIdentifier (MTLModel *objMTLmodel) {
 - (BOOL)isEqual:(MTLModel *)model {
 	if (self == model) return YES;
 	if (![model isMemberOfClass:self.class]) return NO;
-
-	if ([self shouldBeIdentifiedUniquing]) 
-		return [self.mtlUniqueIdentifier isEqualToString:model.mtlUniqueIdentifier];	
 	
 	for (NSString *key in self.class.propertyKeys) {
 		id selfValue = [self valueForKey:key];
