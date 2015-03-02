@@ -15,7 +15,7 @@ Pod::Spec.new do |s|
   s.osx.deployment_target = '10.7'
   s.requires_arc = true
 
-  s.subspec 'extobjc' do |ss|
+  s.subspec 'libextobjc' do |ss|
     ss.source_files = 'Mantle/extobjc'
     ss.frameworks = 'extobjc'
   end
